@@ -16,7 +16,7 @@ class Book:
         self.id = id
         self.title = title
         self.author = author
-        self.status = quantity
+        self.quantity = quantity
 
     def getTitle(self):
         """
@@ -41,6 +41,16 @@ class Book:
         :rtype: int
         """
         return self.quantity
+
+    def removeOneForReservation(self):
+        if self.quantity == 0:
+            raise Exception("Quantity is 0. Cannot remove.")
+        
+        else:
+            # Decrementing by 1
+            self.quantity -= 1
+
+
 
 
 class Reservation:
