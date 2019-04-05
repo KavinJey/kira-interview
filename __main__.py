@@ -1,6 +1,7 @@
 import json
 from prettytable import PrettyTable
 from models import Book, User, BookGroup
+from os import system, name
 
 
 class Main:
@@ -19,7 +20,7 @@ class Main:
         # Loading in our dummy data and creating objects
         # for easier manipulation
 
-        self.users = []
+        self.userPool = []
         self.bookGroups = []
         self.singleBooks = []
 
@@ -28,19 +29,22 @@ class Main:
         self.initializeAllBooks()
         self.initializeAllUsers()
 
-        while True:
+        flag = True
+        while flag:
             print("Welcome to Saasvile Public Library's Booking System.")
             username = input("Please enter your username:\t")
 
             for user in self.userPool:
                 if user.getUsername() == username:
                     password = input("Please enter your password:\t")
+                    print(user.getPassword())
+                    print(password)
                     if user.getPassword() == password:
-                        print("That's not correct. Try Again.")
-                    else:
                         print("Login successfully.")
                         self.run()
-                        break
+                        flag = False
+                    else:
+                        print("That's not correct. Try Again.")
 
     def run(self):
         """
@@ -49,8 +53,36 @@ class Main:
         happens. In a traditional web app this would be like
         your routes.
         """
+        flag = True
+        while flag:
+            try:
+                print(
+                    "\n\nWelcome to the Saasvile Public Library's Book Keeping System.\n\n What would you like to do "
+                    "today? (Enter number)")
+                choice = int(input(
+                    "\n\n1.View all books.\n2.View All Reserved Books\n3.Reserve a book for a User\n4.Search for "
+                    "book by Title\n5.Create a new User.\n6.Logout and Exit.\n\n"))
 
-        print("\n\nWelcome to the Saasvile Public Library's Book Keeping System.\n\n What would you like to do today?")
+                if choice > 6 or choice < 0:
+                    print("That's an invalid choice. Please enter a valid response.")
+
+                else:
+                    if choice == 1:
+                        self.listAllBooks()
+                    elif choice == 2:
+                        self.listCurrentlyReserved()
+                    elif choice == 3:
+                        self.reserveBookForUser()
+                    elif choice == 4:
+                        self.searchForBookByTitle()
+                    elif choice == 5:
+                        self.createUser()
+                    elif choice == 6:
+                        print("See you soon. Bye")
+                        flag = False
+
+            except ValueError:
+                print("Not a valid choice. Try again.")
 
     # TODO: Comment and document this code
     def initializeAllUsers(self):
@@ -59,7 +91,7 @@ class Main:
             rawUserPool = json.loads(file.read())
             for user in rawUserPool:
                 newUser = User(username=user['username'], password=user['password'], isAdmin=user['isAdmin'])
-                self.users.append(newUser)
+                self.userPool.append(newUser)
 
     # TODO: Comment and document this code
     def initializeAllBooks(self):
@@ -77,44 +109,125 @@ class Main:
 
             bookGroups = set(self.singleBooks)
             # Quick increment variable
-            id = 0
+            idForBookGroup = 0
             for bookGroup in bookGroups:
-                # List comprehension here just takes the singleBooks array, creates one with a single title and
+                # List comprehension here just takes the singleBooks array,
+                # creates one with a single title and
                 # attaches it to the BookGroup object
-                newBookGroup = BookGroup(id, [book for book in self.singleBooks if
-                                              book.getTitle() == bookGroup.getTitle() and book.getAuthor() == bookGroup.getAuthor()])
+                newBookGroup = BookGroup(idForBookGroup, [book for book in self.singleBooks if
+                                                          book.getTitle() == bookGroup.getTitle()
+                                                          and book.getAuthor() == bookGroup.getAuthor()])
+
                 self.bookGroups.append(newBookGroup)
-                id += 1
+                idForBookGroup += 1
 
     def listAllBooks(self):
         """
         Function that covers the first requirement for the PoC.
-        This functino is meant to display and print out all the books
+        This function is meant to display and print out all the books
         that are in the library.
 
         """
 
         # using library called PrettyTable here for nice prints
         table = PrettyTable(["Id", "Title", "Author", "Quantity"])
-
         for book in self.bookGroups:
-            table.add_row([str(book.getId()), book.getTitle(), book.getAuthor(), book.getQuantity()])
+            table.add_row([str(book.getId()), book.getTitle(), book.getAuthor(), book.getQuantityAvailable()])
+        print(table)
+
+    def listAllBookNotReserved(self):
+
+        table = PrettyTable(["Id", "Title", "Author", "Quantity"])
+        for book in self.bookGroups:
+            if book.getQuantityAvailable() > 0:
+                table.add_row([str(book.getId()), book.getTitle(), book.getAuthor(), book.getQuantityAvailable()])
+
         print(table)
 
     def listCurrentlyReserved(self):
         print("Titles that are reserved:")
         reservedBooks = [book for book in self.singleBooks if book.getStatus() == "Reserved"]
-        table = PrettyTable("Id", "Title", "Author", "Status")
-        for book in reservedBooks:
-            table.add_row([str(book.getId()), book.getTitle(), book.getAuthor() ,book.getStatus()])
+        table = PrettyTable(["Id", "Title", "Author", "Status", "Reserved By"])
+        if len(reservedBooks) > 0:
+            for book in reservedBooks:
+                table.add_row([str(book.getId()), book.getTitle(), book.getAuthor(), book.getStatus(),
+                               book.getReservedBy().getUsername()])
 
         print(table)
 
     def reserveBookForUser(self):
-        pass
+
+        print("Welcome to Reservation System. ")
+
+        reserveUser = input("Please enter the user you'd like to reserve for: ")
+        reserveUserObject = False
+        for user in self.userPool:
+            if user.getUsername() == reserveUser:
+                reserveUserObject = user
+
+        print(reserveUserObject)
+        if not reserveUserObject:
+            print("User does not exist. Try again.")
+
+        else:
+            print(" \n\n Here is a list of available books:")
+            self.listAllBookNotReserved()
+
+            flag = True
+            while flag:
+                try:
+                    bookId = int(input("\n\nWhat book would you like to reserve? (Enter id)"))
+                    # Hard coding here bc we have dummy data
+                    if 7 < bookId < 0:
+                        print("Not a valid id. Try again.")
+
+                    else:
+                        for book in self.bookGroups:
+                            if book.getId() == bookId:
+                                book.removeOneForReservation(reserveUserObject)
+                                print("%s has been reserved for %s" % (book.getTitle(), reserveUserObject.getUsername()))
+                                flag = False
+
+                except ValueError:
+                    print("That's not a valid id. ")
 
     def createUser(self):
-        pass
+        """
+        Method to create user. There should be some
+        input handling here.
+        """
+        # Should put input handling here
+        username = input("Please enter a username:\t")
+        password = input("Please enter a password:\t")
+        isAdmin = input("Should this user be an admin? Y or N").upper()
+
+        if isAdmin == "Y":
+            newUser = User(username=username, password=password, isAdmin=True)
+
+        elif isAdmin == "N":
+            newUser = User(username=username, password=password, isAdmin=False)
+
+        else:
+            print("Error, creating user. Incorrect input. Try again.")
+
+
+    def searchForBookByTitle(self):
+        query = input("Please enter title of book you'd like to search for:\t")
+        booksThatMatch = []
+
+        for book in self.bookGroups:
+            if query.lower() in book.getTitle().lower():
+                print(query, book.getTitle())
+                booksThatMatch.append(book)
+
+        table = PrettyTable(["Id", "Title", "Author", "Quantity"])
+        for book in booksThatMatch:
+            if book.getQuantityAvailable() > 0:
+                table.add_row([str(book.getId()), book.getTitle(), book.getAuthor(), book.getQuantityAvailable()])
+
+        print("\n\nHere are your results:")
+        print(table)
+
 
 
 if __name__ == '__main__':
@@ -133,4 +246,3 @@ if __name__ == '__main__':
     # else
     #   restart
     Main()
-

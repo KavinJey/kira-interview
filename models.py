@@ -17,6 +17,7 @@ class Book:
         self.title = title
         self.author = author
         self.status = status
+        self.reservedBy = None
 
     def getId(self):
         """
@@ -50,12 +51,28 @@ class Book:
         """
         return self.status
 
+    def getReservedBy(self):
+        """
+        Returns User or None for who the book
+        is reserved to
+        :return:
+        """
+        return self.reservedBy
+
     def setStatus(self, status):
         """
         Setter for status.
         :param status: string that dictates status
 =        """
         self.status = status
+
+    def setReservedBy(self, user):
+        """
+        Setter for reservedBy attr
+        :param user: User object to which the Book is reserved to
+
+        """
+        self.reservedBy = user
 
     def __str__(self):
         return self.title + "By: " + self.author
@@ -110,7 +127,12 @@ class BookGroup:
     def getId(self):
         return self.id
 
-    def removeOneForReservation(self):
+    def removeOneForReservation(self, user):
+        """
+
+        :param user: User object
+        :return:
+        """
         if self.quantityAvailable == 0:
             raise Exception("Quantity is 0. Cannot remove.")
 
@@ -119,15 +141,16 @@ class BookGroup:
             self.quantityAvailable -= 1
             self.quantityReserved += 1
             self.books[0].setStatus("Reserved")
+            self.books[0].setReservedBy(user)
             self.books.pop(0)
 
     def __str__(self):
         return "| Id: " + str(self.id) + " | Book Title: " + self.books[0].getTitle() + " | Quantity: " + str(
-            self.quantity) + " |"
+            self.quantityAvailable) + " |"
 
     def __repr__(self):
         return "| Id: " + str(self.id) + "| Book Title: " + self.books[0].getTitle() + " | Quantity: " + str(
-            self.quantity) + " |"
+            self.quantityAvailable) + " |"
 
 
 class User:
@@ -154,12 +177,14 @@ class User:
         Getter for Username
         :return: Username -> (String)
         """
+        return self.username
 
     def getPassword(self):
         """
         Getter for User
         :return: Password -> (String)
         """
+        return self.password
 
     def __str__(self):
         return "|" + "Username: " + self.username + " Password: " + self.password + " |"
