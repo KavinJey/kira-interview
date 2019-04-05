@@ -142,7 +142,6 @@ class BookGroup:
             self.quantityReserved += 1
             self.books[0].setStatus("Reserved")
             self.books[0].setReservedBy(user)
-            self.books.pop(0)
 
     def __str__(self):
         return "| Id: " + str(self.id) + " | Book Title: " + self.books[0].getTitle() + " | Quantity: " + str(
@@ -185,6 +184,13 @@ class User:
         :return: Password -> (String)
         """
         return self.password
+
+    def getIsAdmin(self):
+        """
+        Getter for admin boolean
+        :return: boolean value for isAdmin
+        """
+        return self.isAdmin
 
     def __str__(self):
         return "|" + "Username: " + self.username + " Password: " + self.password + " |"

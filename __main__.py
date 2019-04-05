@@ -1,7 +1,8 @@
 import json
+
 from prettytable import PrettyTable
+
 from models import Book, User, BookGroup
-from os import system, name
 
 
 class Main:
@@ -31,20 +32,25 @@ class Main:
 
         flag = True
         while flag:
-            print("Welcome to Saasvile Public Library's Booking System.")
+            print("\nWelcome to Saasvile Public Library's Booking System.")
             username = input("Please enter your username:\t")
 
             for user in self.userPool:
                 if user.getUsername() == username:
                     password = input("Please enter your password:\t")
-                    print(user.getPassword())
-                    print(password)
+
                     if user.getPassword() == password:
                         print("Login successfully.")
-                        self.run()
-                        flag = False
+                        if user.getIsAdmin():
+                            self.run()
+                            flag = False
+                        else:
+                            print("This is not an admin user and therefore cannot use "
+                                  "this system.")
                     else:
                         print("That's not correct. Try Again.")
+            else:
+                    print("That Username doesn't exist!")
 
     def run(self):
         """
@@ -84,8 +90,12 @@ class Main:
             except ValueError:
                 print("Not a valid choice. Try again.")
 
-    # TODO: Comment and document this code
     def initializeAllUsers(self):
+        """
+        This function initializes the user pool
+        from a json file located within the directory
+        """
+
         # Our 'users' table
         with open("users.json") as file:
             rawUserPool = json.loads(file.read())
@@ -93,8 +103,12 @@ class Main:
                 newUser = User(username=user['username'], password=user['password'], isAdmin=user['isAdmin'])
                 self.userPool.append(newUser)
 
-    # TODO: Comment and document this code
     def initializeAllBooks(self):
+        """
+        This function initializes the book inventory
+        as well as BookGroups
+        """
+
         with open('data.json') as books:
             rawBooks = json.loads(books.read())
 
@@ -136,6 +150,10 @@ class Main:
         print(table)
 
     def listAllBookNotReserved(self):
+        """
+        This function implements the books that are available.
+        Reserved books are kept from this list.
+        """
 
         table = PrettyTable(["Id", "Title", "Author", "Quantity"])
         for book in self.bookGroups:
@@ -145,9 +163,15 @@ class Main:
         print(table)
 
     def listCurrentlyReserved(self):
+        """
+        This function implements the viewing books that
+        are currently reserved feature.
+        """
         print("Titles that are reserved:")
         reservedBooks = [book for book in self.singleBooks if book.getStatus() == "Reserved"]
         table = PrettyTable(["Id", "Title", "Author", "Status", "Reserved By"])
+
+        # Making sure we have books to put in the list
         if len(reservedBooks) > 0:
             for book in reservedBooks:
                 table.add_row([str(book.getId()), book.getTitle(), book.getAuthor(), book.getStatus(),
@@ -156,6 +180,12 @@ class Main:
         print(table)
 
     def reserveBookForUser(self):
+        """
+        This function implements the reservation.
+        It will ask the user for the input of the user that
+        wants to reserve the book and then lists the books to select
+        from.
+        """
 
         print("Welcome to Reservation System. ")
 
@@ -165,7 +195,6 @@ class Main:
             if user.getUsername() == reserveUser:
                 reserveUserObject = user
 
-        print(reserveUserObject)
         if not reserveUserObject:
             print("User does not exist. Try again.")
 
@@ -185,7 +214,8 @@ class Main:
                         for book in self.bookGroups:
                             if book.getId() == bookId:
                                 book.removeOneForReservation(reserveUserObject)
-                                print("%s has been reserved for %s" % (book.getTitle(), reserveUserObject.getUsername()))
+                                print(
+                                    "%s has been reserved for %s" % (book.getTitle(), reserveUserObject.getUsername()))
                                 flag = False
 
                 except ValueError:
@@ -210,7 +240,6 @@ class Main:
         else:
             print("Error, creating user. Incorrect input. Try again.")
 
-
     def searchForBookByTitle(self):
         query = input("Please enter title of book you'd like to search for:\t")
         booksThatMatch = []
@@ -227,7 +256,6 @@ class Main:
 
         print("\n\nHere are your results:")
         print(table)
-
 
 
 if __name__ == '__main__':
